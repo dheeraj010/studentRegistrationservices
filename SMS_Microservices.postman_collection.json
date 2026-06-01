@@ -1,0 +1,850 @@
+{
+	"info": {
+		"_postman_id": "da27f818-47fb-41c6-a6f6-c56b7f32997a",
+		"name": "SMS Microservices",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "auth_url",
+			"value": "http://localhost:5001",
+			"type": "string"
+		},
+		{
+			"key": "student_url",
+			"value": "http://localhost:5003",
+			"type": "string"
+		},
+		{
+			"key": "professor_url",
+			"value": "http://localhost:5002",
+			"type": "string"
+		},
+		{
+			"key": "course_url",
+			"value": "http://localhost:5004",
+			"type": "string"
+		},
+		{
+			"key": "enrollment_url",
+			"value": "http://localhost:5005",
+			"type": "string"
+		},
+		{
+			"key": "grade_url",
+			"value": "http://localhost:5006",
+			"type": "string"
+		},
+		{
+			"key": "student_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "professor_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth Service",
+			"item": [
+				{
+					"name": "Login as Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var json = pm.response.json();",
+									"if (json.access_token) {",
+									"    pm.collectionVariables.set('student_token', json.access_token);",
+									"    console.log('Student token saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{auth_url}}/api/login/student",
+							"host": ["{{auth_url}}"],
+							"path": ["api", "login", "student"]
+						}
+					}
+				},
+				{
+					"name": "Login as Professor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var json = pm.response.json();",
+									"if (json.access_token) {",
+									"    pm.collectionVariables.set('professor_token', json.access_token);",
+									"    console.log('Professor token saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"professor@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{auth_url}}/api/login/professor",
+							"host": ["{{auth_url}}"],
+							"path": ["api", "login", "professor"]
+						}
+					}
+				},
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var json = pm.response.json();",
+									"if (json.access_token) {",
+									"    pm.collectionVariables.set('admin_token', json.access_token);",
+									"    console.log('Admin token saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@gmail.com\",\n    \"password\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{auth_url}}/api/login/admin",
+							"host": ["{{auth_url}}"],
+							"path": ["api", "login", "admin"]
+						}
+					}
+				},
+				{
+					"name": "Get Public Key JWKS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{auth_url}}/.well-known/jwks.json",
+							"host": ["{{auth_url}}"],
+							"path": [".well-known", "jwks.json"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Student Service",
+			"item": [
+				{
+					"name": "Register New Student",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{student_url}}/api/students",
+							"host": ["{{student_url}}"],
+							"path": ["api", "students"]
+						}
+					}
+				},
+				{
+					"name": "Get All Students",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{student_url}}/api/students",
+							"host": ["{{student_url}}"],
+							"path": ["api", "students"]
+						}
+					}
+				},
+				{
+					"name": "Get Student by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{student_url}}/api/students/STUDENT_ID_HERE",
+							"host": ["{{student_url}}"],
+							"path": ["api", "students", "STUDENT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Student",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"email\": \"updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{student_url}}/api/students/STUDENT_ID_HERE",
+							"host": ["{{student_url}}"],
+							"path": ["api", "students", "STUDENT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Student",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{student_url}}/api/students/STUDENT_ID_HERE",
+							"host": ["{{student_url}}"],
+							"path": ["api", "students", "STUDENT_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Professor Service",
+			"item": [
+				{
+					"name": "Register New Professor",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dr. Jane Smith\",\n    \"email\": \"professor@example.com\",\n    \"phone\": \"123-456-7890\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{professor_url}}/api/professors",
+							"host": ["{{professor_url}}"],
+							"path": ["api", "professors"]
+						}
+					}
+				},
+				{
+					"name": "Get All Professors",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{professor_url}}/api/professors",
+							"host": ["{{professor_url}}"],
+							"path": ["api", "professors"]
+						}
+					}
+				},
+				{
+					"name": "Get Professor by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{professor_url}}/api/professors/PROFESSOR_ID_HERE",
+							"host": ["{{professor_url}}"],
+							"path": ["api", "professors", "PROFESSOR_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Professor",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dr. Jane Smith Updated\",\n    \"email\": \"professor@example.com\",\n    \"phone\": \"123-456-7890\"\n}"
+						},
+						"url": {
+							"raw": "{{professor_url}}/api/professors/PROFESSOR_ID_HERE",
+							"host": ["{{professor_url}}"],
+							"path": ["api", "professors", "PROFESSOR_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Professor",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{professor_url}}/api/professors/PROFESSOR_ID_HERE",
+							"host": ["{{professor_url}}"],
+							"path": ["api", "professors", "PROFESSOR_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Course Service",
+			"item": [
+				{
+					"name": "Create New Course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Introduction to Computer Science\",\n    \"code\": \"CS101\",\n    \"description\": \"Basics of computer science and programming.\",\n    \"schedule\": {\n        \"days\": [\"Monday\", \"Wednesday\"],\n        \"time\": \"10:00 AM - 12:00 PM\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{course_url}}/api/courses",
+							"host": ["{{course_url}}"],
+							"path": ["api", "courses"]
+						}
+					}
+				},
+				{
+					"name": "Get All Courses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{course_url}}/api/courses",
+							"host": ["{{course_url}}"],
+							"path": ["api", "courses"]
+						}
+					}
+				},
+				{
+					"name": "Get Course by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{course_url}}/api/courses/COURSE_ID_HERE",
+							"host": ["{{course_url}}"],
+							"path": ["api", "courses", "COURSE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Course",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Computer Science Updated\",\n    \"code\": \"CS101\",\n    \"description\": \"Updated description.\",\n    \"schedule\": {\n        \"days\": [\"Monday\", \"Wednesday\", \"Friday\"],\n        \"time\": \"10:00 AM - 11:30 AM\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{course_url}}/api/courses/COURSE_ID_HERE",
+							"host": ["{{course_url}}"],
+							"path": ["api", "courses", "COURSE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Course",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{course_url}}/api/courses/COURSE_ID_HERE",
+							"host": ["{{course_url}}"],
+							"path": ["api", "courses", "COURSE_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Enrollment Service",
+			"item": [
+				{
+					"name": "Enroll Student in Course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student\": \"STUDENT_ID_HERE\",\n    \"course\": \"COURSE_ID_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments"]
+						}
+					}
+				},
+				{
+					"name": "Get All Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments"]
+						}
+					}
+				},
+				{
+					"name": "Get Enrollment by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments/ENROLLMENT_ID_HERE",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments", "ENROLLMENT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get Enrollments by Student ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments/student/STUDENT_ID_HERE",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments", "student", "STUDENT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get Enrollments by Course ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments/course/COURSE_ID_HERE",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments", "course", "COURSE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Enrollment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments/ENROLLMENT_ID_HERE",
+							"host": ["{{enrollment_url}}"],
+							"path": ["api", "enrollments", "ENROLLMENT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Lookup Enrollment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{enrollment_url}}/api/enrollments/lookup?student=STUDENT_ID_HERE&course=COURSE_ID_HERE",
+							"host": [
+								"{{enrollment_url}}"
+							],
+							"path": [
+								"api",
+								"enrollments",
+								"lookup"
+							],
+							"query": [
+								{
+									"key": "student",
+									"value": "STUDENT_ID_HERE"
+								},
+								{
+									"key": "course",
+									"value": "COURSE_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Enrollment Service JWKS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{enrollment_url}}/.well-known/jwks.json",
+							"host": ["{{enrollment_url}}"],
+							"path": [".well-known", "jwks.json"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Grade Service",
+			"item": [
+				{
+					"name": "Assign Grade",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student\": \"STUDENT_ID_HERE\",\n    \"course\": \"COURSE_ID_HERE\",\n    \"enrollment\": \"ENROLLMENT_ID_HERE\",\n    \"grade\": \"A\",\n    \"score\": 95,\n    \"remarks\": \"Excellent work!\"\n}"
+						},
+						"url": {
+							"raw": "{{grade_url}}/api/grades",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Grades",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{grade_url}}/api/grades",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Grade by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{grade_url}}/api/grades/GRADE_ID_HERE",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades",
+								"GRADE_ID_HERE"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Grades by Student ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{student_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{grade_url}}/api/grades/student/STUDENT_ID_HERE",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades",
+								"student",
+								"STUDENT_ID_HERE"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Grades by Course ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{grade_url}}/api/grades/course/COURSE_ID_HERE",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades",
+								"course",
+								"COURSE_ID_HERE"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Grade",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{professor_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"grade\": \"A+\",\n    \"score\": 99,\n    \"remarks\": \"Exceptional final exam performance!\"\n}"
+						},
+						"url": {
+							"raw": "{{grade_url}}/api/grades/GRADE_ID_HERE",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades",
+								"GRADE_ID_HERE"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Grade",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{grade_url}}/api/grades/GRADE_ID_HERE",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								"api",
+								"grades",
+								"GRADE_ID_HERE"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Grade Service JWKS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{grade_url}}/.well-known/jwks.json",
+							"host": [
+								"{{grade_url}}"
+							],
+							"path": [
+								".well-known",
+								"jwks.json"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
