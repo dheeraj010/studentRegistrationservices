@@ -30,26 +30,24 @@ A **Node.js microservices application** for student management with distributed 
 │                  Header: x-correlation-id: <uuid>                    │
 └──────────────────────────┬───────────────────────────────────────────┘
                            │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-  │ authService  │  │ studentSvc   │  │ professorSvc │
-  │  Port 5001   │  │  Port 5003   │  │  Port 5002   │
-  └──────┬───────┘  └──────────────┘  └──────────────┘
-         │ fetches students/professors
-         ▼
-  ┌──────────────┐       ┌──────────────────┐
-  │ courseSvc    │◄──────│ enrollmentSvc    │
-  │  Port 5004   │       │  Port 5005       │
-  └──────────────┘       │ calls student +  │
-                         │ course services  │
-                         └──────────────────┘
-                                │
-                                ▼
-                     ┌──────────────────┐
-                     │  Elasticsearch   │
-                     │  (sms-logs-*)    │
-                     └──────────────────┘
+         ┌──────────────────┬─────────┴────────┬──────────────────┐
+         ▼                  ▼                  ▼                  ▼
+  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+  │ authService  │   │  studentSvc  │   │ professorSvc │   │   gradeSvc   │
+  │  Port 5001   │   │  Port 5003   │   │  Port 5002   │   │  Port 5006   │
+  └──────┬───────┘   └──────────────┘   └──────────────┘   └──────┬───────┘
+         │ fetches students/professors                            │ verifies student,
+         ▼                                                        │ course & enrollment
+  ┌──────────────┐          ┌──────────────────┐                  │
+  │  courseSvc   │◄─────────│  enrollmentSvc   │◄─────────────────┘
+  │  Port 5004   │          │  Port 5005       │
+  └──────────────┘          └──────────────────┘
+                            │
+                            ▼
+                 ┌──────────────────┐
+                 │  Elasticsearch   │
+                 │  (sms-logs-*)    │
+                 └──────────────────┘
 ```
 
 ### Services
@@ -61,6 +59,7 @@ A **Node.js microservices application** for student management with distributed 
 | **studentService**  | 5003 | Student CRUD                                      |
 | **courseService**    | 5004 | Course CRUD (created by professors)               |
 | **enrollmentService** | 5005 | Enrollment CRUD, calls student + course services |
+| **gradeService**     | 5006 | Grade CRUD, verifies student, course, & enrollment|
 
 ### Shared Modules (root level)
 
@@ -131,16 +130,28 @@ SMS-Template/
 │       ├── courseRoute.js         ← Course CRUD routes
 │       └── auth/util.js
 │
-└── enrollmentService/
-    ├── .env                      ← PORT=5005, MONGO_URI
-    ├── index.js
-    ├── config/db.js
-    ├── models/enrollment.js
+├── enrollmentService/
+│   ├── .env                      ← PORT=5005, MONGO_URI
+│   ├── index.js
+│   ├── config/db.js
+│   ├── models/enrollment.js
+│   └── routes/
+│       ├── enrollmentRoute.js    ← Enrollment routes (calls student + course)
+│       └── auth/
+│           ├── util.js           ← JWT verify, axios interceptors, fetch helpers
+│           └── publicKeyRoute.js
+│
+└── gradeService/
+    ├── .env                      ← PORT=5006, MONGO_URI
+    ├── index.js                  ← Express app entry point
+    ├── config/db.js              ← MongoDB connection
+    ├── models/grade.js           ← Mongoose model
     └── routes/
-        ├── enrollmentRoute.js    ← Enrollment routes (calls student + course)
+        ├── gradeRoute.js         ← Grade CRUD routes
         └── auth/
             ├── util.js           ← JWT verify, axios interceptors, fetch helpers
-            └── publicKeyRoute.js
+            ├── publicKeyRoute.js
+            └── keys/             ← RSA key pair (private.key, public.key)
 ```
 
 ---
@@ -176,6 +187,7 @@ ADMIN_PASSWORD=admin
 | studentService    | 5003 |
 | courseService     | 5004 |
 | enrollmentService | 5005 |
+| gradeService      | 5006 |
 
 > **Note**: The service URLs in `consts.js` must match these ports. If you change a port, update `consts.js` too.
 
@@ -198,12 +210,13 @@ npm install --prefix ./studentService
 npm install --prefix ./professorService
 npm install --prefix ./courseService
 npm install --prefix ./enrollmentService
+npm install --prefix ./gradeService
 ```
 
 ### Or install everything at once
 
 ```bash
-npm install && npm install --prefix ./authService && npm install --prefix ./studentService && npm install --prefix ./professorService && npm install --prefix ./courseService && npm install --prefix ./enrollmentService
+npm install && npm install --prefix ./authService && npm install --prefix ./studentService && npm install --prefix ./professorService && npm install --prefix ./courseService && npm install --prefix ./enrollmentService && npm install --prefix ./gradeService
 ```
 
 ---
@@ -216,7 +229,7 @@ npm install && npm install --prefix ./authService && npm install --prefix ./stud
 npm run start:all
 ```
 
-This uses `concurrently` to launch all 5 services. Each service gets a color-coded label in the terminal.
+This uses `concurrently` to launch all 6 services. Each service gets a color-coded label in the terminal.
 
 ### Start individual services
 
@@ -226,6 +239,7 @@ npm run start:professorService
 npm run start:studentService
 npm run start:courseService
 npm run start:enrollmentService
+npm run start:gradeService
 ```
 
 ### Expected startup output
@@ -236,6 +250,7 @@ npm run start:enrollmentService
 [studentService]    Student Service is running on port 5003
 [courseService]     Course Server running on port 5004
 [enrollmentService] Enrollment running on port 5005
+[gradeService]      Grade Server running on port 5006
 ```
 
 ---
@@ -284,14 +299,28 @@ npm run start:enrollmentService
 
 ### Enrollment Service (Port 5005)
 
-| Method | Endpoint                         | Roles Allowed              | Description             |
-|--------|----------------------------------|----------------------------|-------------------------|
-| POST   | `/api/enrollments`               | Admin, Professor           | Create enrollment       |
-| GET    | `/api/enrollments`               | Admin, Professor           | Get all enrollments     |
-| GET    | `/api/enrollments/:id`           | Admin, Professor           | Get one enrollment      |
-| GET    | `/api/enrollments/student/:id`   | Admin, Professor, Student  | Enrollments by student  |
-| GET    | `/api/enrollments/course/:id`    | Admin, Professor           | Enrollments by course   |
-| DELETE | `/api/enrollments/:id`           | Admin, Professor           | Delete enrollment       |
+| Method | Endpoint                         | Roles Allowed                         | Description             |
+|--------|----------------------------------|---------------------------------------|-------------------------|
+| POST   | `/api/enrollments`               | Admin, Professor                      | Create enrollment       |
+| GET    | `/api/enrollments`               | Admin, Professor                      | Get all enrollments     |
+| GET    | `/api/enrollments/:id`           | Admin, Professor                      | Get one enrollment      |
+| GET    | `/api/enrollments/student/:id`   | Admin, Professor, Student, Grade Serv | Enrollments by student  |
+| GET    | `/api/enrollments/course/:id`    | Admin, Professor, Grade Service       | Enrollments by course   |
+| GET    | `/api/enrollments/lookup`        | Admin, Grade Service                  | Lookup specific enrollment|
+| DELETE | `/api/enrollments/:id`           | Admin, Professor                      | Delete enrollment       |
+
+### Grade Service (Port 5006)
+
+| Method | Endpoint                         | Roles Allowed                         | Description             |
+|--------|----------------------------------|---------------------------------------|-------------------------|
+| POST   | `/api/grades`                    | Admin, Professor                      | Assign grade            |
+| GET    | `/api/grades`                    | Admin, Professor                      | Get all grades          |
+| GET    | `/api/grades/:id`                | Admin, Professor                      | Get grade by ID         |
+| GET    | `/api/grades/student/:studentId` | Admin, Professor, Student             | Grades by student ID    |
+| GET    | `/api/grades/course/:courseId`   | Admin, Professor                      | Grades by course ID     |
+| PUT    | `/api/grades/:id`                | Admin, Professor (grader)             | Update grade            |
+| DELETE | `/api/grades/:id`                | Admin                                 | Delete grade            |
+| GET    | `/.well-known/jwks.json`         | No                                    | JWKS public key         |
 
 ---
 
@@ -522,14 +551,16 @@ const ROLES = {
   ADMIN: "admin",
   AUTH_SERVICE: "auth_service",
   ENROLLMENT_SERVICE: "enrollment_service",
+  GRADE_SERVICE: "grade_service",
 };
 ```
 
 - **Admin**: Full access to all endpoints
-- **Professor**: CRUD on courses they created, read students, manage enrollments
-- **Student**: Read/update own data, view own enrollments
+- **Professor**: CRUD on courses they created, read students, manage enrollments, assign grades
+- **Student**: Read/update own data, view own enrollments/grades
 - **Auth Service**: Internal role for service-to-service calls from auth
 - **Enrollment Service**: Internal role for service-to-service calls from enrollment
+- **Grade Service**: Internal role for service-to-service calls from grade service
 
 ---
 
